@@ -5,8 +5,10 @@ build-type:    Simple
 
 executable          handshake
     hs-source-dirs: .
-    main-is:        Main.hs
+    main-is:        Server.hs
     ghc-options:    -Wall -threaded -O2 -rtsopts -with-rtsopts=-N
     extensions:     OverloadedStrings
     build-depends:  base   >= 4      && < 5
-                  , scotty
+                  , bytestring
+                  , network
+
