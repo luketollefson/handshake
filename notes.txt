@@ -1,0 +1,27 @@
+import Data.IORef
+
+-- |
+-- = Our program's main that ties it together
+main :: IO ()
+main = do
+    opts <- cli
+    putStrLn ("Starting our " <> show opts)
+    case opts of
+        Server -> mainServer
+        Client -> do ref <- newIORef (0 :: Int)
+                     forever $ do
+                        v <- readIORef ref
+                        putStr (show v <> ": ")
+                        mainClient
+                        modifyIORef ref (+1)
+
+-- Tthis is an alternate formulation
+combineCode3 :: IO ()
+combineCode3 =
+    msg <- client $ pure "Hello, world"
+    server $ unless (S.null msg) $ do
+        msg' <- server $ pure msg
+        server $ combineCode3
+    client $ putStr "Received: "
+    client $ C.putStrLn msg'
+
