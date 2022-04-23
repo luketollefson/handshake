@@ -186,3 +186,82 @@ testin = do
 
 
 -- combined :: (Client (Constraint1, Constraint2, Constraint3), Server )
+
+
+
+
+
+-- Dumb code combination
+combineCode :: Socket -> IO ()
+combineCode s = do
+    client $ sendAll s "Hello, world!"
+    msg <- client $ recv s 1024
+    client $ putStr "Received: "
+    client $ C.putStrLn msg
+    msg <- server $ recv s 1024
+    server $ unless (S.null msg) $ do
+        server $ sendAll s msg
+        server $ combineCode s
+    where client = undefined
+          server = undefined
+
+-- Dupes removed
+combineCode' :: IO ()
+combineCode' =
+    msg <- clientSend $ "Hello, world"
+    server $ unless (S.null msg) $ do
+        server $ serverSend msg
+        server $ combineCode s
+    msg' <- serverSend $ msg
+    client $ putStr "Received: "
+    client $ C.putStrLn msg
+
+-- start with mtl, good examples. Move to polysemy
+-- Lets go simpiler
+
+-- Pretty good code combination one
+combineCode'' :: IO ()
+combineCode'' =
+    msg <- client $ pure "Hello, world"
+    unless (S.null msg) $ do
+        msg' <- server $ pure msg
+        client $ putStr "Received: "
+        client $ C.putStrLn msg'
+        server $ combineCode''
+
+-- best (??) code combination
+combineCode3 :: IO ()
+combineCode3 =
+    msg <- clientSend "Hello, world"
+    unless (S.null msg) $ do
+        msg' <- serverSend msg
+        clientDo $ putStr "Received: "
+        clientDo $ C.putStrLn msg'
+        server $ combineCode''
+
+
+approvalFlow' :: Networked ()
+approvalFlow' = forever $ do
+    clientState <- clientState get
+    res1 <- clientSend clientState
+    if res1
+        then serverSend "messageOne"
+        else serverSend "messageTwo"
+
+-- approvalFlow :: Networked Client'
+approvalFlow :: (Monad f, Networked f) => f () 
+approvalFlow = do
+    res1 <- clientSend $ trace "client1: a" $ "a"
+    res2 <- serverSend $ trace (show $ "server2: " <> res1) $ (if res1 == "my awesome message" then "very cool" else "not cool")
+    res3 <- clientSend $ trace (show $ "client3: " <> res2) (if res2 == "very cool" then "thanks!" else "sad")
+    res4 <- serverSend $ trace (show $ "server4: " <> res3) "nicely done!"
+
+    res1' <- clientSend $ trace (show $ "client5: " <> res4) $ "my awesome message"
+    res2' <- serverSend $ trace (show $ "server6: " <> res1') $ (if res1' == "my awesome message" then "very cool" else "not cool")
+    res3' <- clientSend $ trace (show $ "client7: " <> res2') (if res2' == "very cool" then "thanks!" else "sad")
+    void  $  serverSend $ trace (show $ "server8: " <> res3') "nicely done!"
+
+
+next :: ByteString -> ByteString
+next = B.pack . show . succ . (read :: String -> Int) . B.unpack
+

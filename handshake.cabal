@@ -6,9 +6,10 @@ build-type:    Simple
 executable          handshake
     hs-source-dirs: .
     main-is:        Main.hs
-    ghc-options:    -Wall -threaded -O2 -rtsopts -with-rtsopts=-N
+    ghc-options:    -Wall -threaded -O2 -rtsopts -with-rtsopts=-N -Wno-unused-imports -Wno-unused-top-binds
     extensions:     OverloadedStrings
     build-depends:  base   >= 4      && < 5
+                  , binary
                   , bytestring
                   , network
                   , optparse-applicative
